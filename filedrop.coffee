@@ -28,17 +28,19 @@ filedrop = (method, arg) ->
             select = [0, 0, SIZE[0]*ratio, SIZE[1]*ratio]
             select[0] = (width - select[2]) / 2
             select[1] = (height- select[3]) / 2
+            select[2] = select[0] + select[2]
+            select[3] = select[1] + select[3]
 
             $crop = $img.Jcrop
                 allowMove: true
+                allowResize: false
                 setSelect: select
-                aspectRatio: 26 / 19
                 onSelect: (c)->
                     selectedArea =
                         x: Math.round c.x/ratio
                         y: Math.round c.y/ratio
-                        width: Math.round c.w/ratio
-                        height: Math.round c.h/ratio
+                        width: SIZE[0]
+                        height: SIZE[1]
                     $this.find(".crop-x").html selectedArea.x
                     $this.find(".crop-y").html selectedArea.y
                     $this.find(".crop-w").html selectedArea.width
