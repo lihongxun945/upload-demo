@@ -3,9 +3,13 @@
   var filedrop;
 
   filedrop = function(method, arg) {
-    var $img, $this, createImage;
+    var $area, $img, $this, SIZE, createImage, formData, selectedArea, submit;
     $this = $(this);
+    $area = $this.find(".area");
     $img = void 0;
+    formData = void 0;
+    SIZE = [520, 380];
+    selectedArea = void 0;
     createImage = function(file) {
       var createDrop, reader;
       $img = $('<img />');
@@ -14,40 +18,72 @@
         return $img.attr('src', e.target.result);
       };
       reader.readAsDataURL(file);
-      $this.empty();
-      $img.appendTo($this);
+      $area.empty();
+      $img.appendTo($area);
       createDrop = function() {
-        var $crop;
+        var $crop, height, naturalHeight, naturalWidth, ratio, select, width;
+        height = $img.height();
+        width = $img.width();
+        naturalHeight = $img.prop('naturalHeight');
+        naturalWidth = $img.prop('naturalWidth');
+        ratio = height / naturalHeight;
+        if (!(naturalWidth > SIZE[0]) || !(naturalHeight > SIZE[1])) {
+          $img.replaceWith("<span>图片大小必须大于" + SIZE[0] + "*" + SIZE[1] + "</span>");
+          return;
+        }
+        select = [0, 0, SIZE[0] * ratio, SIZE[1] * ratio];
+        select[0] = (width - select[2]) / 2;
+        select[1] = (height - select[3]) / 2;
         return $crop = $img.Jcrop({
           allowMove: true,
-          setSelect: [20, 20, 260, 190],
+          setSelect: select,
           aspectRatio: 26 / 19,
           onSelect: function(c) {
-            var height, naturalHeight, naturalWidth, ratio, width;
-            height = $img.height();
-            width = $img.width();
-            naturalHeight = $img.prop('naturalHeight');
-            naturalWidth = $img.prop('naturalWidth');
-            ratio = height / naturalHeight;
-            $(".crop_x").val(c.x / ratio);
-            $(".crop_y").val(c.y / ratio);
-            $(".crop_w").val(c.w / ratio);
-            return $(".crop_h").val(c.h / ratio);
+            selectedArea = {
+              x: Math.round(c.x / ratio),
+              y: Math.round(c.y / ratio),
+              width: Math.round(c.w / ratio),
+              height: Math.round(c.h / ratio)
+            };
+            $this.find(".crop-x").html(selectedArea.x);
+            $this.find(".crop-y").html(selectedArea.y);
+            $this.find(".crop-w").html(selectedArea.width);
+            return $this.find(".crop-h").html(selectedArea.height);
           }
         });
       };
       return setTimeout(createDrop, 100);
     };
-    $this.on("dragover", function(e) {
+    submit = function() {
+      formData.append('x-gmkerl-crop', JSON.stringify(selectedArea));
+      formData.append('x-gmkerl-thumbnail', 'your-thumbnail-name');
+      formData.append('x-gmkerl-type', JSON.stringify({
+        fix_scale: 50
+      }));
+      return $.ajax({
+        url: $this.data("url"),
+        data: formData,
+        processData: false,
+        contentType: false,
+        type: 'POST',
+        success: function(data) {
+          return alert(data);
+        }
+      });
+    };
+    $area.on("dragover", function(e) {
       e.preventDefault();
       return e.stopPropagation();
     });
-    $this.on("drop", function(e) {
+    $area.on("drop", function(e) {
       var files;
       e.preventDefault();
       files = e.originalEvent.dataTransfer.files;
-      return createImage(files[0]);
+      createImage(files[0]);
+      formData = new FormData();
+      return formData.append("files", files[0]);
     });
+    $this.find(".submit").click(submit);
     return $this;
   };
 
